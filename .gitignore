@@ -1,0 +1,10 @@
+app/__init__.py
+app/utils/db.py
+
+app/utils/__pycache__/
+app/routes/__pycache__/
+app/__pycache__/
+*.pyc
+
+.c9/
+secret.txt

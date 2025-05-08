@@ -1,0 +1,87 @@
+<!-- app/templates/forgot.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>비밀번호 재설정 요청</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .form-container {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        input[type="email"] {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        input[type="submit"] {
+            width: 100%;
+            background-color: #007bff;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+        p {
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #555;
+        }
+        a {
+            display: inline-block;
+            margin-top: 15px;
+            font-size: 13px;
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="form-container">
+    <h2>🔑 비밀번호 재설정</h2>
+
+    <p>
+        가입된 이메일 주소를 입력하시면,<br>
+        비밀번호 초기화 요청 메일을 보내드립니다.<br>
+        메일 링크를 클릭하면 <strong>임시 비밀번호</strong>가 발급됩니다.
+    </p>
+
+    {% if error %}
+    <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
+    <form method="post">
+        <input type="email" name="email" placeholder="이메일 주소 입력" required>
+        <input type="submit" value="비밀번호 재설정 요청">
+    </form>
+
+    <a href="/login">← 로그인으로 돌아가기</a>
+</div>
+
+</body>
+</html>

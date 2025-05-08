@@ -1,0 +1,366 @@
+<!-- app/templates/vote.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>날짜 투표</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales-all.min.js"></script>
+  <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f9fafb;
+        margin: 0;
+        padding: 30px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+    
+      .topbar {
+        width: 100%;
+        max-width: 1150px;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+    
+      .layout {
+        display: flex;
+        gap: 40px;
+        max-width: 1150px;
+        width: 100%;
+        align-items: flex-start;
+      }
+    
+      .container {
+        flex: 1;
+        min-width: 700px;
+      }
+    
+      #calendar {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        min-height: 740px;
+        box-sizing: border-box;
+      }
+    
+      .btn {
+        padding: 12px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        display: block;
+        margin: 12px auto 0;
+      }
+    
+      .btn:hover {
+        background-color: #0056b3;
+      }
+    
+      .fc-tooltip {
+        position: absolute;
+        z-index: 10001;
+        background: white;
+        border: 1px solid gray;
+        padding: 5px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        white-space: pre-line;
+        display: none;
+      }
+    
+      .fc-daygrid-day-frame {
+        height: 100px !important;
+        overflow: hidden;
+      }
+    
+      .sidebar {
+        width: 320px;
+        background: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        max-height: 740px;
+        overflow-y: auto;
+        box-sizing: border-box;
+      }
+    
+      .sidebar h3 {
+        font-size: 18px;
+        font-weight: bold;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 5px;
+        margin-bottom: 20px;
+      }
+    
+      .user-entry {
+        margin-bottom: 12px;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+    
+      .status {
+        float: right;
+        font-weight: bold;
+      }
+    
+      .invitation-form {
+          margin-top: 10px;          /* ↓ 줄임 */
+          border-top: 1px dashed #ccc;
+          padding-top: 10px;         /* ↓ 줄임 */
+        }
+    
+      .invitation-form h4 {
+        font-size: 15px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #007bff;
+      }
+    
+      .invitation-form input[type="email"] {
+          width: 100%;
+          padding: 8px;
+          border: 1px solid #ccc;
+          border-radius: 5px;
+          box-sizing: border-box; /* ✅ 패딩, 보더 포함해서 박스 크기 계산 */
+        }
+    
+      #resend-list {
+        margin-top: 15px;
+      }
+    
+      #resend-list label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 10px;
+        background-color: #f1f1f1;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        font-size: 14px; /* ✅ 글꼴 크기 통일 */
+      }
+    
+      #resend-list input[type="checkbox"] {
+        margin-left: 10px;
+      }
+    
+      #invited-list, #resend-list {
+        max-height: 300px;
+        overflow-y: auto;
+        padding-right: 5px;
+      }
+    </style>
+</head>
+<body>
+  <div class="topbar">
+    <h2>{{ meeting.title }}</h2>
+    <p>마감일: {{ meeting.deadline.strftime('%Y-%m-%d %H:%M') }}</p>
+  </div>
+
+  <div class="layout">
+    <div class="container">
+      <div id="calendar"></div>
+
+      <form onsubmit="return submitVote()" id="vote-form">
+        <input type="hidden" name="selected_dates" id="selected_dates">
+        <button type="submit" class="btn" id="vote-button">투표하기</button>
+      </form>
+
+      <form action="/" method="get">
+        <button class="btn" style="margin-top: 10px; background-color: #6c757d;">← 목록으로 돌아가기</button>
+      </form>
+    </div>
+
+    <div class="sidebar">
+      <h3>📋 초대된 사람</h3>
+      <div id="invited-list">
+        {% for person in invited_info %}
+          <div class="user-entry">
+            {{ person.name or '이름 없음' }}<br>
+            <small>{{ person.email }}</small>
+            <span class="status">{{ '✅' if person.voted else '❌' }}</span>
+          </div>
+        {% endfor %}
+      </div>
+
+      {% if is_creator %}
+        <div class="invitation-form">
+          <h4>✉️ 새 초대</h4>
+          <input type="email" id="new-invite-email" placeholder="이메일 입력">
+          <button type="button" onclick="sendNewInvite()" class="btn">초대 메일 보내기</button>
+          <br>
+          <h4>📨 재전송</h4>
+          <div id="resend-list">
+            {% for person in invited_info %}
+              <label>
+                <span>{{ person.email }}</span>
+                <input type="checkbox" class="resend-checkbox" value="{{ person.email }}">
+              </label>
+            {% endfor %}
+            <button type="button" onclick="resendInvites()" class="btn">선택한 사람에 재초대</button>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+<script>
+  let selectedDates = {{ my_votes | default([]) | tojson | safe }};
+  let originalSelected = [...selectedDates];
+  let allOptions = {{ meeting.selected_dates | tojson | safe }};
+  allOptions = typeof allOptions === 'string' ? JSON.parse(allOptions) : allOptions;
+  let voteCounts = {{ votes_by_date | tojson | safe }};
+  let calendar;
+  let canEdit = selectedDates.length === 0;
+
+  document.addEventListener('DOMContentLoaded', function () {
+    const calendarEl = document.getElementById('calendar');
+
+    calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: 'dayGridMonth',
+      selectable: true,
+      selectMirror: true,
+      unselectAuto: false,
+      locale: 'ko',
+      validRange: { start: new Date().toISOString().split('T')[0] },
+      dateClick: function (info) {
+        if (!canEdit || !allOptions.includes(info.dateStr)) return;
+        const index = selectedDates.indexOf(info.dateStr);
+        if (index === -1) selectedDates.push(info.dateStr);
+        else selectedDates.splice(index, 1);
+        calendar.refetchEvents();
+      },
+      events: function (fetchInfo, successCallback) {
+        const events = [];
+
+        for (let date of allOptions) {
+          let voters = voteCounts[date] || [];
+          let tooltip = voters.join('\n');
+          if (voters.length > 0) {
+            events.push({
+              start: date,
+              title: `${voters.length}명`,
+              allDay: true,
+              extendedProps: { tooltip }
+            });
+          }
+          events.push({
+            start: date,
+            display: 'background',
+            backgroundColor: 'lightgreen'
+          });
+        }
+
+        for (let date of selectedDates) {
+          events.push({
+            start: date,
+            display: 'background',
+            backgroundColor: 'green'
+          });
+        }
+
+        successCallback(events);
+      },
+      eventDidMount: function (info) {
+        if (info.event.extendedProps.tooltip) {
+          let tooltip = document.createElement('div');
+          tooltip.className = 'fc-tooltip';
+          tooltip.innerText = info.event.extendedProps.tooltip;
+          document.body.appendChild(tooltip);
+          info.el.addEventListener('mouseenter', function (e) {
+            tooltip.style.left = (e.pageX + 10) + 'px';
+            tooltip.style.top = (e.pageY + 10) + 'px';
+            tooltip.style.display = 'block';
+          });
+          info.el.addEventListener('mouseleave', function () {
+            tooltip.style.display = 'none';
+          });
+        }
+      }
+    });
+
+    calendar.render();
+
+    const btn = document.getElementById('vote-button');
+    if (!canEdit) {
+      btn.textContent = '수정';
+      btn.onclick = switchToEditMode;
+    }
+  });
+
+  function submitVote() {
+    if (selectedDates.length === 0) {
+      alert("하나 이상의 날짜를 선택해주세요.");
+      return false;
+    }
+
+    fetch('/submit_vote/{{ meeting.id }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ selected_dates: selectedDates })
+    }).then(res => res.json())
+      .then(data => {
+        if (data.status === 'ok') {
+          voteCounts = data.votes_by_date;
+          originalSelected = [...selectedDates];
+          canEdit = false;
+          document.getElementById('vote-button').textContent = '수정';
+          document.getElementById('vote-button').onclick = switchToEditMode;
+          calendar.refetchEvents();
+          location.reload();
+        }
+      });
+
+    return false;
+  }
+
+  function switchToEditMode(e) {
+    e.preventDefault();
+    canEdit = true;
+    selectedDates = [...originalSelected];
+    calendar.refetchEvents();
+    document.getElementById('vote-button').textContent = '투표하기';
+    document.getElementById('vote-button').onclick = null;
+  }
+
+  function resendInvites() {
+    const checked = Array.from(document.querySelectorAll('.resend-checkbox:checked')).map(cb => cb.value);
+    if (checked.length === 0) return;
+    fetch('/resend_invites/{{ meeting.id }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ emails: checked })
+    }).then(() => {
+      alert('📨 초대 완료되었습니다.');
+      location.reload();
+    });
+  }
+
+  function sendNewInvite() {
+    const email = document.getElementById('new-invite-email').value.trim();
+    if (!email) return;
+    fetch('/check_email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    }).then(res => res.json()).then(data => {
+      if (data.exists) {
+        fetch('/resend_invites/{{ meeting.id }}', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ emails: [email] })
+        }).then(() => location.reload());
+      } else {
+        alert('해당 이메일은 등록된 사용자가 아닙니다.');
+      }
+    });
+  }
+</script>
+</body>
+</html>

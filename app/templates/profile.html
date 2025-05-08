@@ -1,0 +1,180 @@
+<!-- app/templates/profile.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>내 정보</title>
+    <style>
+        body {
+            display: flex;
+            margin: 0;
+            font-family: 'Noto Sans KR', Arial, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .content {
+            flex: 1;
+            padding: 40px;
+            max-width: calc(100% - 220px);
+            box-sizing: border-box;
+            background: #fff;
+            min-height: 100vh;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        p {
+            margin: 8px 0;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        input[disabled] {
+            background-color: #e9ecef;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+        button, input[type="submit"] {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 18px;
+            font-size: 14px;
+            border: none;
+            border-radius: 5px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        button:hover, input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+        .cancel-btn {
+            background-color: #6c757d;
+        }
+        .cancel-btn:hover {
+            background-color: #5a6268;
+        }
+        label {
+            font-weight: bold;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #ccc;
+            margin: 20px 0;
+        }
+        .message {
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .message.error {
+            color: red;
+        }
+        .message.success {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <h2 style="text-align: center;">👤 내 프로필</h2>
+
+        {% if error %}
+        <div class="message error">{{ error }}</div>
+        {% endif %}
+        {% if success %}
+        <div class="message success">{{ success }}</div>
+        {% endif %}
+
+        <!-- 출력용 -->
+        <div id="display-fields" style="text-align: center; margin-top: 50px;">
+            <div style="display: inline-block; text-align: left; padding: 30px 40px; border: 1px solid #ddd; border-radius: 10px; background: #f9f9f9; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <p style="margin-bottom: 20px;"><strong>이메일:</strong> {{ user.email }}</p>
+                <p style="margin-bottom: 20px;"><strong>이름:</strong> {{ user.name }}</p>
+                <p style="margin-bottom: 30px;"><strong>전화번호:</strong> {{ user.phone or '미등록' }}</p>
+                <button onclick="enableEdit()" style="
+                    background-color: #007bff;
+                    color: white;
+                    padding: 10px 20px;
+                    font-size: 14px;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    transition: background-color 0.2s;
+                ">수정</button>
+            </div>
+        </div>
+
+        <!-- 수정용 -->
+        <form method="POST" id="edit-fields" style="display: none;">
+            <label>이메일</label><br>
+            <input type="text" value="{{ user.email }}" disabled><br>
+
+            <label>이름</label><br>
+            <input type="text" name="name" value="{{ user.name }}"><br>
+
+            <hr>
+
+            <h4>비밀번호 변경</h4>
+            <label>현재 비밀번호 (필수)</label><br>
+            <input type="password" name="current_password" required><br>
+
+            <label>새 비밀번호 (선택)</label><br>
+            <input type="password" name="new_password"><br>
+
+            <label>새 비밀번호 확인</label><br>
+            <input type="password" name="confirm_password"><br>
+
+            <hr>
+
+            <label>전화번호</label><br>
+            <input type="text" id="phone-input" name="phone" value="{{ user.phone }}"><br>
+
+            <label>
+                {% set agreed = user.agreed_notify|int %}
+                <input type="checkbox" id="agree-check" name="agreed_notify"
+                       {% if agreed == 1 %}checked{% endif %}
+                       onchange="togglePhoneInput()">
+                동의하면 카톡에 미팅 투표결과가 발송됩니다.
+            </label><br><br>
+
+            <input type="submit" value="저장">
+            <button type="button" class="cancel-btn" onclick="cancelEdit()">취소</button>
+        </form>
+    </div>
+
+    {% include 'components/dashboard.html' %}
+
+    <script>
+        function enableEdit() {
+            document.getElementById("edit-fields").style.display = "block";
+            document.getElementById("display-fields").style.display = "none";
+            togglePhoneInput();
+        }
+
+        function cancelEdit() {
+            document.getElementById("edit-fields").style.display = "none";
+            document.getElementById("display-fields").style.display = "block";
+        }
+
+        function togglePhoneInput() {
+            const checkbox = document.getElementById('agree-check');
+            const phoneInput = document.getElementById('phone-input');
+            if (checkbox && phoneInput) {
+                phoneInput.disabled = !checkbox.checked;
+            }
+        }
+
+        window.onload = function () {
+            togglePhoneInput();
+            {% if error or success %}
+            enableEdit();
+            {% endif %}
+        };
+    </script>
+</body>
+</html>

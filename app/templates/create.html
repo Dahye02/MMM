@@ -1,0 +1,272 @@
+<!-- app/templates/create.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>약속 만들기</title>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales-all.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 30px;
+            background-color: #f4f6f8;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        input[type="text"],
+        input[type="datetime-local"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .save-btn {
+            background-color: #28a745;
+        }
+        .save-btn:hover {
+            background-color: #218838;
+        }
+        .back-btn {
+            background-color: #6c757d;
+        }
+        .back-btn:hover {
+            background-color: #5a6268;
+        }
+        #calendar {
+            margin-top: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        /* ✅ 캘린더 표 셀 높이 100px로 고정 */
+        .fc-daygrid-day-frame {
+            min-height: 100px !important;
+            height: 100px !important;
+        }
+        .input-error {
+            border: 1px solid red !important;
+        }
+        #invited-users li {
+            padding: 8px 12px;
+            background: #f1f1f1;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #333;
+        }
+        #invite-email.input-error {
+            border-color: red !important;
+        }
+        #invite-section button:hover {
+            background-color: #0069d9;
+        }
+        #invited-users li {
+            padding: 8px 12px;
+            background: #f1f1f1;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .remove-btn {
+            background: red;
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .remove-btn:hover {
+            background: darkred;
+        }
+        #invite-email.input-error {
+            border-color: red !important;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>📅 약속 만들기</h2>
+
+    <form method="POST" onsubmit="prepareForm()" id="create-form">
+        <label for="title">약속 제목</label>
+        <input type="text" id="title" name="title" placeholder="약속 제목 입력" required>
+
+        <label for="deadline">마감일 설정 (조사 마감 시간)</label>
+        <input type="datetime-local" id="deadline" name="deadline" required>
+
+        <div id="calendar"></div>
+
+        <input type="hidden" name="selected_dates" id="selected_dates">
+
+        <!-- 초대할 이메일 입력창 -->
+        <div id="invite-section" style="margin-top: 30px; background: #fff; padding: 20px; border-radius: 10px;">
+            <label for="invite-email">초대할 이메일 입력</label>
+            <div style="display: flex; gap: 10px; margin-top: 8px;">
+                <input type="text" id="invite-email" placeholder="이메일 주소 입력" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
+                <button type="button" onclick="addInvite()" style="
+                    padding: 10px 16px;
+                    background-color: #007bff;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    white-space: nowrap;
+                    margin-bottom: 20px;
+                ">추가</button>
+            </div>
+            <small id="email-error" style="color: red; display: none; margin-top: 5px;">회원이 아닙니다. 가입 후 이용해주세요.</small>
+            
+            <div id="invite-list" style="margin-top: 20px;">
+                <strong>✅ 초대한 사람 목록</strong>
+                <ul id="invited-users" style="list-style: none; padding: 0; margin-top: 10px;">
+                    <!-- 동적으로 추가 -->
+                </ul>
+            </div>
+        </div>
+        
+        <input type="hidden" name="invited_emails" id="invited_emails">
+
+
+        <button type="submit" class="btn save-btn">Active</button>
+    </form>
+    <form action="/" method="get" style="margin-top: 10px;">
+        <button type="submit" class="btn back-btn">← 목록으로 돌아가기</button>
+    </form>
+</div>
+
+<script>
+let selectedDates = [];
+let invitedEmails = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    const calendarEl = document.getElementById('calendar');
+    const today = new Date().toISOString().split('T')[0];
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        selectable: true,
+        selectMirror: true,
+        selectOverlap: false,
+        unselectAuto: false,
+        locale: 'ko',
+        validRange: { start: today },
+        dateClick: function(info) {
+            const clickedDate = info.dateStr;
+            const index = selectedDates.indexOf(clickedDate);
+            if (index === -1) {
+                selectedDates.push(clickedDate);
+            } else {
+                selectedDates.splice(index, 1);
+            }
+            calendar.refetchEvents();
+        },
+        events: function(fetchInfo, successCallback, failureCallback) {
+            const events = selectedDates.map(date => ({
+                start: date,
+                display: 'background',
+                backgroundColor: '#666666'
+            }));
+            successCallback(events);
+        }
+    });
+    calendar.render();
+});
+
+function prepareForm() {
+    document.getElementById('selected_dates').value = JSON.stringify(selectedDates);
+    document.getElementById('invited_emails').value = JSON.stringify(invitedEmails);
+}
+
+function addInvite() {
+    const emailInput = document.getElementById('invite-email');
+    const errorMsg = document.getElementById('email-error');
+    const email = emailInput.value.trim();
+
+    if (!email) {
+        errorMsg.style.display = 'none';
+        emailInput.classList.remove('input-error');
+        return;
+    }
+
+    fetch('/check_email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.exists) {
+            if (!invitedEmails.includes(email)) {
+                invitedEmails.push(email);
+
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    ${email}
+                    <button type="button" class="remove-btn" onclick="removeInvite('${email}')">x</button>
+                `;
+                document.getElementById('invited-users').appendChild(li);
+                emailInput.value = '';
+                emailInput.classList.remove('input-error');
+                errorMsg.style.display = 'none';
+            } else {
+                alert('이미 초대한 이메일입니다.');
+            }
+        } else {
+            emailInput.classList.add('input-error');
+            errorMsg.style.display = 'block';
+        }
+    })
+    .catch(err => {
+        console.error(err);
+    });
+}
+
+function removeInvite(email) {
+    invitedEmails = invitedEmails.filter(e => e !== email);
+    const invitedList = document.getElementById('invited-users');
+    invitedList.innerHTML = '';
+    invitedEmails.forEach(e => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+            ${e}
+            <button type="button" class="remove-btn" onclick="removeInvite('${e}')">x</button>
+        `;
+        invitedList.appendChild(li);
+    });
+}
+</script>
+</body>
+</html>

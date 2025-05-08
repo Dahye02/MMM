@@ -1,0 +1,125 @@
+<!-- app/templates/components/dashboard.html -->
+<div class="dashboard">
+    <a href="/withdraw" class="withdraw-link">회원 탈퇴</a>
+
+    <div class="dashboard-center">
+        <div class="profile">
+            <!-- 기본 아이콘 사용 -->
+            <img src="{{ url_for('static', filename='images/profile.png') }}" alt="프로필" class="profile-icon">
+            <p class="email">{{ session.get('email') }}</p>
+        </div>
+
+        <ul class="nav-links">
+            <li><a href="/profile">내 정보</a></li>
+            <li><a href="/">약속 목록</a></li>
+        </ul>
+        <div style="margin-top: 30px;">
+            <a href="/logout" class="logout-btn">로그아웃</a>
+        </div>
+    </div>
+
+    <div class="footer-links">
+        <a href="/privacy">개인정보처리방침</a> | <a href="/terms">이용약관</a>
+    </div>
+</div>
+
+<style>
+.dashboard {
+    width: 220px;
+    height: 100vh;
+    background: #f9fafb;
+    border-left: 1px solid #ddd;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05);
+    position: fixed;
+    top: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.withdraw-link {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 11px;
+    color: #dc3545;
+    text-decoration: none;
+}
+
+.dashboard-center {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.profile {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.profile-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.email {
+    font-size: 13px;
+    margin-top: 10px;
+    color: #333;
+}
+
+.nav-links {
+    list-style: none;
+    padding: 0;
+    margin-top: 20px;
+    text-align: center;
+}
+
+.nav-links li {
+    margin: 10px 0;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: black;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.footer-links {
+    position: absolute;
+    bottom: 60px;
+    left: 0;
+    right: 0;
+    font-size: 11px;
+    color: #666;
+    text-align: center;
+}
+
+.footer-links a {
+    color: #666;
+    text-decoration: none;
+    margin: 0 5px;
+}
+
+.logout-btn {
+    display: inline-block;
+    padding: 8px 20px;
+    background-color: #dc3545;
+    color: white;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 14px;
+}
+.logout-btn:hover {
+    background-color: #c82333;
+}
+</style>
